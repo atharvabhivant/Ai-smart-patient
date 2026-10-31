@@ -13,7 +13,7 @@ The local development login defaults to `admin` / `1234`. Set `APP_USERNAME` and
 
 ## Deploy to Render
 
-The root `render.yaml` defines a Singapore web service on Render's always-on Starter compute plan. On the first Blueprint setup, provide these secret values in Render's prompt; do not commit them:
+The root `render.yaml` defines a Singapore web service on Render's free compute plan. Free services may sleep after 15 minutes without requests, and Render blocks outbound SMTP on the free plan, so this configuration is for demos rather than continuous monitoring or email alerts. On the first Blueprint setup, provide these secret values in Render's prompt; do not commit them:
 
 - `FIREBASE_SERVICE_ACCOUNT_JSON`: the Firebase service-account JSON contents
 - `APP_PASSWORD`: a strong dashboard password
