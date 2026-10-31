@@ -17,6 +17,7 @@ from reportlab.pdfgen import canvas
 from datetime import datetime
 
 import time
+import json
 
 load_dotenv()
 
@@ -32,7 +33,16 @@ import os
 # -----------------------------
 
 
-cred = credentials.Certificate("firebase-key.json")
+firebase_service_account_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON")
+
+if firebase_service_account_json:
+    cred = credentials.Certificate(json.loads(firebase_service_account_json))
+elif os.path.isfile("firebase-key.json"):
+    cred = credentials.Certificate("firebase-key.json")
+else:
+    raise RuntimeError(
+        "Set FIREBASE_SERVICE_ACCOUNT_JSON or provide firebase-key.json"
+    )
 
 
 firebase_admin.initialize_app(cred, {
@@ -63,6 +73,9 @@ GMAIL_SENDER = os.getenv("GMAIL_SENDER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 
 ALERT_RECIPIENT = os.getenv("ALERT_RECIPIENT")
+
+APP_USERNAME = os.getenv("APP_USERNAME", "admin")
+APP_PASSWORD = os.getenv("APP_PASSWORD", "1234")
 
 
 print("Gmail sender loaded:", bool(GMAIL_SENDER))
@@ -391,7 +404,7 @@ report from the AI Smart ICU Monitoring System.
         print("EMAIL ALERT ERROR:", e)
 
 
-app.secret_key = "smarticu_secret_key"
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "smarticu_secret_key")
 
 
 last_saved_time = 0
@@ -428,7 +441,7 @@ def login():
 
         # Default Login
 
-        if username == "admin" and password == "1234":
+        if username == APP_USERNAME and password == APP_PASSWORD:
 
 
             session["logged_in"] = True
@@ -1311,7 +1324,13 @@ def logout():
     return redirect(url_for("login"))
 
 
-if __name__ == "__main__":
+@app.route("/healthz")
+def health_check():
+
+    return jsonify({"status": "ok"})
+
+
+def start_email_scheduler():
 
     scheduler = BackgroundScheduler()
 
@@ -1329,6 +1348,13 @@ if __name__ == "__main__":
     print("EMAIL MONITOR STARTED")
     print("Checking patient status every 30 seconds...")
 
+    return scheduler
+
+
+scheduler = start_email_scheduler()
+
+
+if __name__ == "__main__":
     try:
         app.run(
             debug=True,
